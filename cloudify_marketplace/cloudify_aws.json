@@ -30,6 +30,24 @@
     },
     {
       "type": "file",
+      "source": "resources/get_first_external_ip",
+      "destination": "/tmp/get_first_external_ip"
+    },
+    {
+      "type": "shell",
+      "inline": ["sudo mv /tmp/get_first_external_ip /usr/local/bin/get_first_external_ip", "sudo chown root. /usr/local/bin/get_first_external_ip", "sudo chmod 555 /usr/local/bin/get_first_external_ip"]
+    },
+    {
+      "type": "file",
+      "source": "resources/fix_cloudify_ip_configurations",
+      "destination": "/tmp/fix_cloudify_ip_configurations"
+    },
+    {
+      "type": "shell",
+      "inline": ["sudo mv /tmp/fix_cloudify_ip_configurations /usr/local/bin/fix_cloudify_ip_configurations", "sudo chown root. /usr/local/bin/fix_cloudify_ip_configurations", "sudo chmod 555 /usr/local/bin/fix_cloudify_ip_configurations"]
+    },
+    {
+      "type": "file",
       "source": "resources/update-cloudify-env.service",
       "destination": "/tmp/update-cloudify-env.service"
     },
