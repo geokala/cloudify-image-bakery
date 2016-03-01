@@ -15,11 +15,15 @@
       "source_ami": "{{user `aws_source_ami`}}",
       "instance_type": "m3.medium",
       "ssh_username": "centos",
-      "user_data_file": "userdata/disable_requiretty.sh",
+      "ssh_pty": "true",
       "ami_name": "cloudify marketplace {{timestamp}}"
     }
   ],
   "provisioners": [
+    {
+      "type": "shell",
+      "inline": ["sudo sed -i -e 's/^Defaults.*requiretty/# Defaults requiretty/g' /etc/sudoers"]
+    },
     {
       "type": "shell",
       "script": "provision/disable_selinux.sh"
