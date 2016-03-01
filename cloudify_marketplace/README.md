@@ -2,8 +2,11 @@
 
 ## How to use this?
 
-1. Install prerequisites
-2. Run `packer build -var 'cloudify_version=<VERSION>' cloudify_aws.json` while replacing `<VERSION>` with the desired Cloudify manager version
+# TODO: Improve prerequisites instructions and listing- make script to verify? What OSes are supported for running this on?
+1. Install prerequisites (packer, aws CLI)
+2. Copy the sample vars file for the environment you are using (e.g. inputs_aws-example.json) and edit it as appropriate. Note that you should generally not change values that are not an all caps description of what the variable is for unless you have good reason.
+# TODO: Improve packer run information to allow for different types once they exist, and to account for different var file naming
+3. Run `packer build -var-file inputs_aws.json cloudify_aws.json`
 
 ## Prerequisites
 

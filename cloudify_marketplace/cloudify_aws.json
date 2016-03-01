@@ -1,8 +1,8 @@
 {
   "variables": {
-    "aws_access_key": "{{env `AWS_ACCESS_KEY_ID`}}",
-    "aws_secret_key": "{{env `AWS_SECRET_ACCESS_KEY`}}",
-    "aws_source_ami": "ami-91feb7fb",
+    "aws_access_key": "{{user `aws_access_key`}}",
+    "aws_secret_key": "{{user `aws_secret_key`}}",
+    "aws_source_ami": "{{user `aws_source_ami`}}",
     "cloudify_version": "{{user `cloudify_version`}}"
   },
   "builders": [
