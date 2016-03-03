@@ -1,0 +1,114 @@
+{
+  "variables": {
+    "aws_access_key": "AWS ACCESS KEY NOT PROVIDED",
+    "aws_secret_key": "AWS SECRET KEY NOT PROVIDED",
+    "aws_source_ami": "AWS SOURCE AMI NOT PROVIDED",
+    "openstack_ssh_keypair_name": "SSH KEYPAIR NOT SET",
+    "openstack_availability_zone": "AVAILABILITY ZONE NOT SET",
+    "openstack_image_flavor": "IMAGE FLAVOR NOT SET",
+    "openstack_identity_endpoint": "IDENTITY ENDPOINT NOT SET",
+    "openstack_source_image_id": "IMAGE ID NOT SET",
+    "openstack_username": "OPENSTACK USERNAME NOT SET",
+    "openstack_password": "OPENSTACK PASSWORD NOT SET",
+    "openstack_tenant_name": "OPENSTACK TENANT NOT SET",
+    "openstack_floating_ip_pool_name": "OPENSTACK FLOATING IP POOL NAME NOT SET",
+    "openstack_network": "OPENSTACK NETWORK NOT SET",
+    "openstack_security_group": "OPENSTACK SECURITY GROUP NOT SET",
+    "cloudify_version": "{{user `cloudify_version`}}"
+  },
+  "builders": [
+    {
+      "name": "aws",
+      "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "us-east-1",
+      "source_ami": "{{user `aws_source_ami`}}",
+      "instance_type": "m3.medium",
+      "ssh_username": "centos",
+      "ssh_pty": "true",
+      "ami_name": "cloudify marketplace {{timestamp}}"
+    },
+    {
+      "name": "openstack",
+      "type": "openstack",
+      "ssh_username": "centos",
+      "ssh_pty": "true",
+      "ssh_keypair_name": "{{user `openstack_ssh_keypair_name`}}",
+      "availability_zone": "{{user `openstack_availability_zone`}}",
+      "flavor": "{{user `openstack_image_flavor`}}",
+      "identity_endpoint": "{{user `openstack_identity_endpoint`}}",
+      "source_image": "{{user `openstack_source_image_id`}}",
+      "username": "{{user `openstack_username`}}",
+      "password": "{{user `openstack_password`}}",
+      "tenant_name": "{{user `openstack_tenant_name`}}",
+      "floating_ip_pool": "{{user `openstack_floating_ip_pool_name`}}",
+      "networks": ["{{user `openstack_network`}}"],
+      "security_groups": ["{{user `openstack_security_group`}}"],
+      "image_name": "cloudify marketplace {{timestamp}}"
+    }
+  ],
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "provision/check_prerequisites"
+    },
+    {
+      "type": "shell",
+      "script": "provision/os_configure"
+    },
+    {
+      "type": "file",
+      "source": "resources/get_first_external_ip",
+      "destination": "/tmp/get_first_external_ip"
+    },
+    {
+      "type": "shell",
+      "script": "provision/enable_usr_local_script",
+      "environment_vars": "SCRIPT_NAME=get_first_external_ip"
+    },
+    {
+      "type": "file",
+      "source": "resources/fix_cloudify_ip_configurations",
+      "destination": "/tmp/fix_cloudify_ip_configurations"
+    },
+    {
+      "type": "shell",
+      "script": "provision/enable_usr_local_script",
+      "environment_vars": "SCRIPT_NAME=fix_cloudify_ip_configurations"
+    },
+    {
+      "type": "file",
+      "source": "resources/update-cloudify-env.service",
+      "destination": "/tmp/update-cloudify-env.service"
+    },
+    {
+      "type": "shell",
+      "script": "provision/enable_systemd_service",
+      "environment_vars": "SERVICE_NAME=update-cloudify-env.service"
+    },
+    {
+      "type": "file",
+      "source": "blueprint",
+      "destination": "/tmp/blueprint_configure"
+    },
+    {
+      "type": "shell",
+      "environment_vars": "CORE_TAG_NAME={{user `cloudify_version`}}",
+      "script": "provision/bootstrap_simple"
+    },
+    {
+      "type": "shell",
+      "script": "provision/upload_blueprint",
+      "environment_vars": [
+        "BLUEPRINT_PATH=/tmp/blueprint_configure",
+        "BLUEPRINT_FILE_NAME=configure.yaml",
+        "BLUEPRINT_NAME=CloudifySettings"
+      ]
+    },
+    {
+      "type": "shell",
+      "script": "provision/cleanup"
+    }
+  ]
+}

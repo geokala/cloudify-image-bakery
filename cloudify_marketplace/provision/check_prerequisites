@@ -1,0 +1,6 @@
+#! /usr/bin/env bash
+MIN_RAM_GB=3
+if [[ $(free -g | grep Mem: | awk '{ print $2 }') -lt ${MIN_RAM_GB} ]]; then
+  echo "Insufficient RAM detected. Bootstrap will fail. Please ensure you have at least ${MIN_RAM_GB} GB RAM."
+  exit 1
+fi

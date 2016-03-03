@@ -1,0 +1,3 @@
+#!/bin/bash -e
+sudo rm -rf ~/.ssh/* /tmp/* ~/cfy ~/cloudify
+sudo yum clean all
