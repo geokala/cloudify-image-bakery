@@ -2,8 +2,8 @@
 
 ## How to use this?
 
-# TODO: Improve prerequisites instructions and listing- make script to verify? What OSes are supported for running this on?
-1. Install prerequisites (packer, aws CLI)
+# TODO: Improve prerequisites instructions and listing- make script to verify? Note what OSes we have run packer on to generate this
+1. Install prerequisites (packer, aws CLI(?), openstack CLI(?))
 2. Copy the sample vars file and alter it for the environment(s) you wish to generate images for- e.g. modify all aws settings if you only wish to generate images on AWS. Inputs for each environment are prefixed by the environment name (aws or openstack). You may also set the cloudify version to use a version other than 3.3.1.
 3. Assuming you have copied the example inputs to inputs.json:
  3.1 To build on all environments: Run `packer build --var-file inputs.json cloudify.json`
