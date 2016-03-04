@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 import urllib2
 import subprocess
@@ -7,9 +8,14 @@ from ConfigParser import ConfigParser
 from cloudify import ctx
 from cloudify_rest_client import CloudifyClient
 from cloudify.state import ctx_parameters as inputs
+from cloudify.exceptions import NonRecoverableError
 
 
 BOTO_CONF = os.path.expanduser('~/.boto')
+SUPPORTED_PLATFORMS = [
+    'aws',
+    'openstack',
+]
 
 
 def get_manager_sg():
@@ -117,19 +123,74 @@ def update_context(agent_sg_id, agent_kp_id, agent_pk_path, agent_user):
     c.manager.update_context(name, context)
 
 
+def regenerate_host_keys():
+    # Do not regenerate moduli as it will take an excessive amount of time,
+    # but do ensure it's the one distributed with openssh
+    subprocess.call(["rm", "/etc/ssh/moduli"])
+    subprocess.call(["yum", "install", "-y", "openssh"])
+    if not os.path.isfile('/etc/ssh/moduli'):
+        # We were already up to date, reinstall to get the moduli file
+        subprocess.call(["yum", "reinstall", "-y", "openssh"])
+
+    # regenerate ecdsa key
+    subprocess.call(["rm", "/etc/ssh/ssh_host_ecdsa_key"])
+    subprocess.call(["rm", "/etc/ssh/ssh_host_ecdsa_key.pub"])
+    subprocess.call(["ssh-keygen", "-b", "521", "-f",
+                     "/etc/ssh/ssh_host_ecdsa_key", "-N", '', "-t", "ecdsa"])
+
+    # regenerate ed25519 key
+    subprocess.call(["rm", "/etc/ssh/ssh_host_ed25519_key"])
+    subprocess.call(["rm", "/etc/ssh/ssh_host_ed25519_key.pub"])
+    subprocess.call(["ssh-keygen", "-f", "/etc/ssh/ssh_host_ed25519_key",
+                     "-N", '', "-t", "ed25519"])
+
+    # regenerate rsa key
+    subprocess.call(["rm", "/etc/ssh/ssh_host_rsa_key"])
+    subprocess.call(["rm", "/etc/ssh/ssh_host_rsa_key.pub"])
+    subprocess.call(["ssh-keygen", "-b", "4096", "-f",
+                     "/etc/ssh/ssh_host_rsa_key", "-N", '', "-t", "rsa"])
+
+    # restart ssh
+    subprocess.call(["systemctl", "restart", "sshd"])
+
+
+def authorize_user_ssh_key(ssh_key):
+    with open('/home/centos/.ssh/authorized_keys', 'a') as auth_handle:
+        auth_handle.write('%s\n' % ssh_key)
+
+
 def main():
-    install_boto()
+    platform = inputs['platform']
+    if platform not in SUPPORTED_PLATFORMS:
+        raise NonRecoverableError(
+            '{platform} is not a supported platform. '
+            'Supported platforms are {platforms}.'.format(
+                platform=platform,
+                platforms=SUPPORTED_PLATFORMS,
+            )
+        )
 
-    create_boto_config(path=BOTO_CONF,
-                       aws_access_key_id=inputs['aws_access_key_id'],
-                       aws_secret_access_key=inputs['aws_secret_access_key'],
-                       region=get_region())
+    regenerate_host_keys()
 
+    authorize_user_ssh_key(inputs['user_ssh_key'])
+
+    if platform == 'aws':
+        install_boto()
+
+        create_boto_config(
+            path=BOTO_CONF,
+            aws_access_key_id=inputs['aws_access_key_id'],
+            aws_secret_access_key=inputs['aws_secret_access_key'],
+            region=get_region(),
+        )
+
+    # These will probably work on openstack as well with modifications to the
+    # way the functions work, but will need to be skipped for vsphere
     sg_id = create_agent_sg(sg_name=inputs['agent_security_group_name'])
-    
     akp_id, apk_path = create_keypair(path='~/.ssh/', 
                                       kp_name=inputs['agent_keypair_name'])
 
+    # Will need to not do the sg and keypair (but probably need the path- check)
     update_context(agent_sg_id=sg_id,
                    agent_kp_id=akp_id,
                    agent_pk_path=apk_path,
