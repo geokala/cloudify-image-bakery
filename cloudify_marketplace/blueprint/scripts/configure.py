@@ -59,7 +59,7 @@ def main():
 
     authorize_user_ssh_key(inputs['user_ssh_key'])
 
-    install_packages(inputs['required_packages'])
+    install_packages(inputs['required_packages'].split(','))
 
 
 if __name__ == '__main__':

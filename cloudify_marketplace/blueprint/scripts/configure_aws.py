@@ -100,8 +100,8 @@ def update_context(agent_sg_id, agent_kp_id, agent_pk_path, agent_user):
 def main():
     create_boto_config(
         path=BOTO_CONF,
-        aws_access_key_id=inputs['aws_access_key_id'],
-        aws_secret_access_key=inputs['aws_secret_access_key'],
+        aws_access_key_id=inputs['aws_access_key'],
+        aws_secret_access_key=inputs['aws_secret_key'],
         region=get_region(),
     )
 

@@ -13,22 +13,7 @@ OPENSTACK_PLUGIN_CONF = '/etc/cloudify/openstack_plugin/openstack_config.json'
 AGENTS_KEY_PATH = '/root/.ssh/agent_key.pem'
 
 
-def install_openstack_packages():
-    ctx.logger.info('Installing openstack packages')
-    if not hasattr(sys, 'real_prefix'):
-        raise RuntimeError('Not running inside virtualenv directory')
-
-    pip_fpath = os.path.join(sys.prefix, 'bin', 'pip')
-    cmd = [pip_fpath, 'install', 'python-neutronclient==4.1.1', 'python-novaclient==3.3.0']
-    exit_code = subprocess.call(cmd)
-
-    ctx.logger.info('Install exit code: {0}'.format(exit_code))
-    if exit_code != 0:
-        raise RuntimeError('Boto install ended with non zero exit code')
-
-
-def create_openstack_config(path,
-                            username,
+def create_openstack_config(username,
                             password,
                             tenant_name,
                             region,
@@ -289,12 +274,22 @@ def main():
         password=inputs['openstack_password'],
         auth_url=inputs['openstack_auth_url'],
         project_id=inputs['openstack_tenant_name'],
+        region=inputs['openstack_region'],
     )
     neutron_client = neutronclient.Client(
         username=inputs['openstack_username'],
         password=inputs['openstack_password'],
         auth_url=inputs['openstack_auth_url'],
         tenant_name=inputs['openstack_tenant_name'],
+        region=inputs['openstack_region'],
+    )
+
+    create_openstack_config(
+        username=inputs['openstack_username'],
+        password=inputs['openstack_password'],
+        tenant_name=inputs['openstack_tenant_name'],
+        region=inputs['openstack_region'],
+        auth_url=inputs['openstack_auth_url'],
     )
 
     server = get_server_by_mac(
@@ -305,7 +300,7 @@ def main():
     resources_context = build_resources_context(
         server=server,
         agents_keypair_name=inputs['agents_keypair_name'],
-        agents_secgroup_name=['agents_security_group_name'],
+        agents_secgroup_name=inputs['agents_security_group_name'],
         nova_client=nova_client,
         neutron_client=neutron_client,
     )

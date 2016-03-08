@@ -102,7 +102,7 @@
       "script": "provision/upload_blueprint",
       "environment_vars": [
         "BLUEPRINT_PATH=/tmp/blueprint_configure",
-        "BLUEPRINT_FILE_NAME=configure.yaml",
+        "BLUEPRINT_FILE_NAME_PREFIX=configure",
         "BLUEPRINT_NAME=CloudifySettings"
       ]
     },
