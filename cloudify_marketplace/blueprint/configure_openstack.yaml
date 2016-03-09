@@ -1,0 +1,96 @@
+tosca_definitions_version: cloudify_dsl_1_2
+
+imports:
+  - http://www.getcloudify.org/spec/cloudify/3.3.1/types.yaml
+
+inputs:
+
+  user_ssh_key:
+    type: string
+    default: ''
+    description: >
+      SSH key to authorize for access to the centos user account.
+
+  required_packages:
+    type: string
+    default: 'python-neutronclient==4.1.1,python-novaclient==3.3.0'
+    description: >
+      Packages required for platform specific configuration
+
+  agent_security_group_name:
+    type: string
+    default: cloudify-agents-security-group
+    description: >
+      Security group to be generated and used for accessing agents on VMs.
+
+  agent_keypair_name:
+    type: string
+    default: cloudify-agents-keypair
+    description: >
+      Keypair to be generated and used for accessing agents on VMs.
+
+  agents_user:
+    type: string
+    default: centos
+    description: >
+      User to be used for accessing agents on VMs.
+
+  openstack_username:
+    type: string
+    description: >
+      Username to use when accessing openstack API.
+
+  openstack_password:
+    type: string
+    description: >
+      Password to use when accessing openstack API.
+
+  openstack_auth_url:
+    type: string
+    description: >
+      Authentication URL to use when accessing openstack API.
+      e.g. http://myopenstack:5000/
+
+  openstack_tenant_name:
+    type: string
+    description: >
+      Tenant name to use when accessing openstack API.
+
+  openstack_region:
+    type: string
+    description: >
+      Region to use when accessing openstack API.
+
+node_templates:
+
+  general_configuration:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: scripts/configure.py
+          executor: central_deployment_agent
+          inputs:
+            user_ssh_key: { get_input: user_ssh_key }
+            required_packages: { get_input: required_packages }
+
+# TODO: Split this out and composite the general config part
+  openstack_configuration:
+    type: cloudify.nodes.Root
+    interfaces:
+      cloudify.interfaces.lifecycle:
+        configure:
+          implementation: scripts/configure_openstack.py
+          executor: central_deployment_agent
+          inputs:
+            agent_security_group_name: { get_input: agent_security_group_name }
+            agent_keypair_name: { get_input: agent_keypair_name }
+            agents_user: { get_input: agents_user }
+            openstack_username: { get_input: openstack_username }
+            openstack_password: { get_input: openstack_password }
+            openstack_auth_url: { get_input: openstack_auth_url }
+            openstack_tenant_name: { get_input: openstack_tenant_name }
+            openstack_region: { get_input: openstack_region }
+    relationships:
+      - type: cloudify.relationships.depends_on
+        target: general_configuration

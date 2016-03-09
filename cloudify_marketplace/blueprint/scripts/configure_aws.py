@@ -73,7 +73,6 @@ def create_keypair(path, kp_name):
     return kp.name, pk_path
 
 
-# TODO: Check this is the correct context (grab from a bootstrapped AWS)
 def update_context(agent_sg_id, agent_kp_id, agent_pk_path, agent_user):
     c = CloudifyClient()
     name = c.manager.get_context()['name']
