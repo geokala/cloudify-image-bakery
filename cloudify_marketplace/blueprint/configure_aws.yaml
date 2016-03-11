@@ -3,10 +3,6 @@ tosca_definitions_version: cloudify_dsl_1_2
 imports:
   - http://www.getcloudify.org/spec/cloudify/3.3.1/types.yaml
 
-plugins:
-  aws_client:
-    package_name: boto==2.34.0
-
 inputs:
 
   user_ssh_key:
@@ -72,3 +68,7 @@ node_templates:
     relationships:
       - type: cloudify.relationships.depends_on
         target: general_configuration
+
+  # This is a workaround for cloudify not installing the required dependencies without a node that 'uses' them
+  dependencies_install:
+    type: cloudify.aws_dependencies.Install

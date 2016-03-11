@@ -51,6 +51,10 @@
   ],
   "provisioners": [
     {
+      "type": "shell-local",
+      "command": "scripts/make_dependencies"
+    },
+    {
       "type": "shell",
       "script": "provision/check_prerequisites"
     },

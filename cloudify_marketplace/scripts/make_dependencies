@@ -1,0 +1,8 @@
+#! /usr/bin/env bash
+for platform in aws openstack; do
+  rm blueprint/dependencies/plugins/${platform}_dependencies.zip
+  mkdir ${platform}_dependencies
+  cp ${platform}-dependencies ${platform}_dependencies/setup.py
+  zip -r blueprint/dependencies/plugins/${platform}_dependencies.zip ${platform}_dependencies/setup.py
+  rm -rf ${platform}_dependencies
+done
