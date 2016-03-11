@@ -1,5 +1,6 @@
 {
   "variables": {
+    "name_prefix": "cloudify marketplace",
     "aws_access_key": "AWS ACCESS KEY NOT PROVIDED",
     "aws_secret_key": "AWS SECRET KEY NOT PROVIDED",
     "aws_source_ami": "AWS SOURCE AMI NOT PROVIDED",
@@ -27,7 +28,7 @@
       "instance_type": "m3.medium",
       "ssh_username": "centos",
       "ssh_pty": "true",
-      "ami_name": "cloudify marketplace {{timestamp}}"
+      "ami_name": "{{user `name_prefix`}} {{timestamp}}"
     },
     {
       "name": "openstack",

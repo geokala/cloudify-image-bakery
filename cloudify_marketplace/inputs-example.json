@@ -1,5 +1,7 @@
 {
+  "name_prefix": "cloudify marketplace",
   "cloudify_version": "VERSION OF CLOUDIFY, E.G. 3.3",
+
   "aws_access_key": "YOUR AWS ACCESS KEY",
   "aws_secret_key": "YOUR AWS SECRET KEY",
   "aws_source_ami": "ami-91feb7fb",

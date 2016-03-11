@@ -1,5 +1,6 @@
 from copy import copy
 import json
+import os
 import subprocess
 
 from cloudify import ctx
@@ -7,7 +8,7 @@ from cloudify_rest_client import CloudifyClient
 from cloudify.state import ctx_parameters as inputs
 from cloudify.exceptions import NonRecoverableError
 from neutronclient.v2_0 import client as neutronclient
-from novaclient import client as novaclient
+from novaclient.v2 import client as novaclient
 
 OPENSTACK_PLUGIN_CONF = '/etc/cloudify/openstack_plugin/openstack_config.json'
 AGENTS_KEY_PATH = '/root/.ssh/agent_key.pem'
@@ -25,6 +26,9 @@ def create_openstack_config(username,
         'region': region,
         'auth_url': auth_url,
     }
+    conf_dir = os.path.dirname(OPENSTACK_PLUGIN_CONF)
+    if not os.path.exists(conf_dir):
+        os.makedirs(conf_dir)
     with open(OPENSTACK_PLUGIN_CONF, 'w') as conf_handle:
         json.dump(config, conf_handle)
 
@@ -191,7 +195,7 @@ def create_agents_security_group(nova_client,
     for rule in required_rules:
         rule_details = copy(base_rule_details)
         rule_details.update(rule)
-        nova_client.security_groups.create(**rule_details)
+        nova_client.security_group_rules.create(**rule_details)
 
 
 def update_context(server,
@@ -217,7 +221,7 @@ def get_server_by_mac(nova_client, mac_address):
     for server in servers:
         for address in server.addresses.values():
             for listing in address:
-                if listing['OS-EXT-IPS-MAC:mac-addr'] == mac_address:
+                if listing['OS-EXT-IPS-MAC:mac_addr'] == mac_address:
                     return server
     # If we got this far, we found no relevant server
     return None
@@ -269,9 +273,8 @@ def get_mac_address():
 
 def main():
     nova_client = novaclient.Client(
-        "2.0",
         username=inputs['openstack_username'],
-        password=inputs['openstack_password'],
+        api_key=inputs['openstack_password'],
         auth_url=inputs['openstack_auth_url'],
         project_id=inputs['openstack_tenant_name'],
         region=inputs['openstack_region'],
