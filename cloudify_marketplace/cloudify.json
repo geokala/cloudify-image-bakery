@@ -46,13 +46,13 @@
       "floating_ip_pool": "{{user `openstack_floating_ip_pool_name`}}",
       "networks": ["{{user `openstack_network`}}"],
       "security_groups": ["{{user `openstack_security_group`}}"],
-      "image_name": "cloudify marketplace {{timestamp}}"
+      "image_name": "{{user `name_prefix`}} {{timestamp}}"
     }
   ],
   "provisioners": [
     {
       "type": "shell-local",
-      "command": "scripts/make_dependencies"
+      "command": "provision_local/make_dependencies"
     },
     {
       "type": "shell",

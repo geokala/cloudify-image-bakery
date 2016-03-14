@@ -10,7 +10,7 @@ from cloudify.exceptions import NonRecoverableError
 from neutronclient.v2_0 import client as neutronclient
 from novaclient.v2 import client as novaclient
 
-OPENSTACK_PLUGIN_CONF = '/etc/cloudify/openstack_plugin/openstack_config.json'
+OPENSTACK_PLUGIN_CONF = '/root/openstack_config.json'
 AGENTS_KEY_PATH = '/root/.ssh/agent_key.pem'
 
 
@@ -49,8 +49,8 @@ def build_resources_context(server,
 
     resources['agents_security_group'] = {
         'external_resource': False,
-        'id': agents_keypair_name,
-        'name': agents_keypair_name,
+        'id': agents_secgroup_name,
+        'name': agents_secgroup_name,
         'type': 'security_group',
     }
 
@@ -176,20 +176,30 @@ def create_agents_security_group(nova_client,
         description="Security group for Cloudify agent VMs",
     )
 
+    add_tcp_allows_to_security_group(
+        nova_client=nova_client,
+        port_list=[22,5879],
+        cidr=manager_cidr,
+        security_group_id=security_group.id,
+    )
+
+
+def add_tcp_allows_to_security_group(nova_client,
+                                     port_list,
+                                     cidr,
+                                     security_group_id):
     base_rule_details = {
         'ip_protocol': 'tcp',
-        'cidr': manager_cidr,
-        'parent_group_id': security_group.id,
+        'cidr': cidr,
+        'parent_group_id': security_group_id,
     }
+
     required_rules = [
         {
-            'from_port': 22,
-            'to_port': 22,
-        },
-        {
-            'from_port': 5879,
-            'to_port': 5879,
-        },
+            'from_port': port,
+            'to_port': port,
+        }
+        for port in port_list
     ]
 
     for rule in required_rules:
@@ -271,6 +281,17 @@ def get_mac_address():
     return mac_address
 
 
+def configure_manager_security_group(nova_client,
+                                     management_subnet_cidr, 
+                                     management_security_group_id):
+    add_tcp_allows_to_security_group(
+        nova_client=nova_client,
+        port_list=[5672,8101,53229],
+        cidr=management_subnet_cidr,
+        security_group_id=management_security_group_id,
+    )
+
+
 def main():
     nova_client = novaclient.Client(
         username=inputs['openstack_username'],
@@ -322,6 +343,13 @@ def main():
         nova_client=nova_client,
         agents_secgroup_name=inputs['agents_security_group_name'],
         manager_cidr=manager_cidr,
+    )
+
+    management_security_group = resources_context['management_security_group']
+    configure_manager_security_group(
+        nova_client=nova_client,
+        management_subnet_cidr=manager_cidr,
+        management_security_group_id=management_security_group['id'],
     )
 
     update_context(
