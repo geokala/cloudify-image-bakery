@@ -178,7 +178,7 @@ def create_agents_security_group(nova_client,
 
     add_tcp_allows_to_security_group(
         nova_client=nova_client,
-        port_list=[22,5879],
+        port_list=[22,5985],
         cidr=manager_cidr,
         security_group_id=security_group.id,
     )

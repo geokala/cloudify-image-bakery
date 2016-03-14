@@ -40,24 +40,38 @@ def create_boto_config(path, aws_access_key_id, aws_secret_access_key, region):
         config.write(fh)
 
 
-def create_agent_sg(sg_name):
+def configure_security_groups(agents_sg_name):
     ctx.logger.info('Creating agent security group: {0}'
-                    .format(sg_name))
+                    .format(agents_sg_name))
 
     conn = boto.ec2.EC2Connection()
     sg_desc = 'Security group for Cloudify agent VMs'
-    sg = conn.create_security_group(sg_name, sg_desc)
+    sg = conn.create_security_group(agents_sg_name, sg_desc)
     manager_sg = conn.get_all_security_groups(groupnames=get_manager_sg())[0]
     ctx.logger.info('Manager group name: {0}'.format(manager_sg))
 
     # authorize from manager to agents
-    sg.authorize('tcp', 22, 22, src_group=manager_sg)
-    sg.authorize('tcp', 5985, 5985, src_group=manager_sg)
+    add_tcp_allows_to_security_group(
+        port_list=[22,5985],
+        security_group=sg,
+        from_group=manager_sg,
+    )
 
     # authorize from agent to manager
-    manager_sg.authorize(src_group=sg)
+    add_tcp_allows_to_security_group(
+        port_list=[5672,8101,53229],
+        security_group=manager_sg,
+        from_group=sg,
+    )
 
     return sg.id
+
+
+def add_tcp_allows_to_security_group(port_list,
+                                     security_group,
+                                     from_group):
+    for port in port_list:
+        security_group.authorize('tcp', port, port, src_group=from_group)
 
 
 def create_keypair(path, kp_name):
@@ -104,9 +118,11 @@ def main():
         region=get_region(),
     )
 
-    sg_id = create_agent_sg(sg_name=inputs['agent_security_group_name'])
+    sg_id = configure_security_groups(
+        agents_sg_name=inputs['agents_security_group_name'],
+    )
     akp_id, apk_path = create_keypair(path='~/.ssh/',
-                                      kp_name=inputs['agent_keypair_name'])
+                                      kp_name=inputs['agents_keypair_name'])
 
     update_context(agent_sg_id=sg_id,
                    agent_kp_id=akp_id,
