@@ -205,7 +205,14 @@ def add_tcp_allows_to_security_group(nova_client,
     for rule in required_rules:
         rule_details = copy(base_rule_details)
         rule_details.update(rule)
-        nova_client.security_group_rules.create(**rule_details)
+        try:
+            nova_client.security_group_rules.create(**rule_details)
+        except BadRequest as err:
+            if 'This rule already exists in group' in str(err):
+                # If the rule already exists that is not a problem
+                pass
+            else:
+                raise err
 
 
 def update_context(server,
