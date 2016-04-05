@@ -163,6 +163,8 @@ def get_subnet_cidr(subnet_id, neutron_client):
 
 
 def create_agents_keys(nova_client, agents_keypair_name):
+    # TODO: Catch error here and make unrecoverable, because we won't have the
+    # private key
     keypair = nova_client.keypairs.create(name=agents_keypair_name)
     with open(AGENTS_KEY_PATH, 'w') as priv_key_handle:
         priv_key_handle.write(keypair.private_key)
@@ -207,7 +209,8 @@ def add_tcp_allows_to_security_group(nova_client,
         rule_details.update(rule)
         try:
             nova_client.security_group_rules.create(**rule_details)
-        except BadRequest as err:
+        # TODO: This is probably a BadRequest, make it more specific
+        except Exception as err:
             if 'This rule already exists in group' in str(err):
                 # If the rule already exists that is not a problem
                 pass
