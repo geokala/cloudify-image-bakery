@@ -114,6 +114,15 @@
       ]
     },
     {
+      "type": "file",
+      "source": "blueprint/plugins",
+      "destination": "/tmp/dependencies"
+    },
+    {
+      "type": "shell",
+      "script": "provision/install_dependencies"
+    },
+    {
       "type": "shell",
       "script": "provision/cleanup"
     }

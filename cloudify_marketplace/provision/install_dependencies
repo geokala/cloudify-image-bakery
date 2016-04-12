@@ -1,0 +1,7 @@
+#! /usr/bin/env bash
+
+# Install the appropriate dependencies into the mgmtworker env
+sudo /opt/mgmtworker/env/bin/pip install /tmp/dependencies/${PACKER_BUILD_NAME}_dependencies.zip
+
+# Clean up
+rm -rf /tmp/dependencies
