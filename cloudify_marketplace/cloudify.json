@@ -17,6 +17,9 @@
     "openstack_floating_ip_pool_name": "OPENSTACK FLOATING IP POOL NAME NOT SET",
     "openstack_network": "OPENSTACK NETWORK NOT SET",
     "openstack_security_group": "OPENSTACK SECURITY GROUP NOT SET",
+    "vsphere_vm_ip_address": "VSPHERE VM IP NOT SET",
+    "vsphere_vm_ssh_username": "centos",
+    "vsphere_vm_ssh_password": "VSPHERE VM SSH PASSWORD NOT SET",
     "cloudify_version": "{{user `cloudify_version`}}"
   },
   "builders": [
@@ -49,6 +52,14 @@
       "networks": ["{{user `openstack_network`}}"],
       "security_groups": ["{{user `openstack_security_group`}}"],
       "image_name": "{{user `name_prefix`}} {{timestamp}}"
+    },
+    {
+      "name": "vsphere",
+      "type": "null",
+      "ssh_pty": "true",
+      "ssh_host": "{{user `vsphere_vm_ip_address`}}",
+      "ssh_username": "{{user `vsphere_vm_ssh_username`}}",
+      "ssh_password": "{{user `vsphere_vm_ssh_password`}}"
     }
   ],
   "provisioners": [

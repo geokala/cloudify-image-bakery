@@ -16,5 +16,9 @@
   "openstack_tenant_name": "OPENSTACK TENANT NAME",
   "openstack_floating_ip_pool_name": "OPENSTACK FLOATING IP POOL NAME",
   "openstack_network": "OPENSTACK NETWORK ID",
-  "openstack_security_group": "OPENSTACK SECURITY GROUP ID"
+  "openstack_security_group": "OPENSTACK SECURITY GROUP ID",
+
+  "vsphere_vm_ip_address": "IP OF VSPHERE VM FOR SSH",
+  "vsphere_vm_ssh_username": "USERNAME FOR VSPHERE VM",
+  "vsphere_vm_ssh_password": "PASSWORD FOR VSPHERE VM"
 }
