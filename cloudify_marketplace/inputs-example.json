@@ -1,6 +1,10 @@
 {
   "name_prefix": "cloudify marketplace",
   "cloudify_version": "VERSION OF CLOUDIFY, E.G. 3.3",
+  "cloudify_manager_username": "USERNAME TO USE ON CLOUDIFY MANAGER",
+  "cloudify_manager_password": "PASSWORD TO USE ON CLOUDIFY MANAGER",
+  "cloudify_broker_username": "USERNAME TO USE ON CLOUDIFY BROKER",
+  "cloudify_broker_password": "PASSWORD TO USE ON CLOUDIFY BROKER",
 
   "aws_ssh_username": "centos",
   "aws_access_key": "YOUR AWS ACCESS KEY",
