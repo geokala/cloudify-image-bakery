@@ -26,7 +26,9 @@
     "cloudify_manager_password": "cloudify",
     "cloudify_broker_username": "cloudify",
     "cloudify_broker_password": "cloudify",
-    "cloudify_version": "{{user `cloudify_version`}}"
+    "cloudify_manager_security_enabled": "true",
+    "cloudify_version": "{{user `cloudify_version`}}",
+    "perform_cleanup": "true"
   },
   "builders": [
     {
@@ -114,12 +116,19 @@
     },
     {
       "type": "shell",
+      "inline": [
+        "sudo mv /tmp/blueprint_configure /opt/cloudify_configuration"
+      ]
+    },
+    {
+      "type": "shell",
       "environment_vars": [
         "CORE_TAG_NAME={{user `cloudify_version`}}",
         "CLOUDIFY_MANAGER_USERNAME={{user `cloudify_manager_username`}}",
         "CLOUDIFY_MANAGER_PASSWORD={{user `cloudify_manager_password`}}",
         "CLOUDIFY_BROKER_USERNAME={{user `cloudify_broker_username`}}",
-        "CLOUDIFY_BROKER_PASSWORD={{user `cloudify_broker_password`}}"
+        "CLOUDIFY_BROKER_PASSWORD={{user `cloudify_broker_password`}}",
+        "CLOUDIFY_MANAGER_SECURITY_ENABLED={{user `cloudify_manager_security_enabled`}}"
       ],
       "script": "provision/bootstrap_simple"
     },
@@ -127,7 +136,7 @@
       "type": "shell",
       "script": "provision/upload_blueprint",
       "environment_vars": [
-        "BLUEPRINT_PATH=/tmp/blueprint_configure",
+        "BLUEPRINT_PATH=/opt/cloudify_configuration",
         "BLUEPRINT_FILE_NAME_PREFIX=configure",
         "BLUEPRINT_NAME=CloudifySettings"
       ]
@@ -143,6 +152,14 @@
     },
     {
       "type": "shell",
+      "script": "provision/set_manager_context",
+      "execute_command": "{{ .Vars }} sudo -E ~/cfy/bin/python  {{ .Path }}"
+    },
+    {
+      "type": "shell",
+      "environment_vars": [
+        "PERFORM_CLEANUP={{user `perform_cleanup`}}"
+      ],
       "script": "provision/cleanup"
     }
   ]
