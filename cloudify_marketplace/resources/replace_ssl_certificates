@@ -7,10 +7,20 @@ import shutil
 import subprocess
 import time
 
+import yaml
 from cloudify_rest_client import CloudifyClient
 from cloudify_cli.utils import get_auth_header
 
 target_file = '/tmp/cloudify_ssl_certificate_replacement.json'
+
+# Config paths
+MGMTWORKER_CONFIG_PATH = '/opt/mgmtworker/work/broker_config.json'
+RESTSERVICE_CONFIG_PATH = '/opt/manager/cloudify-rest.conf'
+AMQPINFLUX_CONFIG_PATH = '/etc/sysconfig/cloudify-amqpinflux'
+
+# Executable paths
+RABBITMQCTL = '/sbin/rabbitmqctl'
+SED = '/bin/sed'
 
 logger = logging.getLogger('cloudify_security_config')
 # TODO: logging.INFO or maybe look for a flag
@@ -27,6 +37,19 @@ if __name__ == '__main__':
         # we'll be re-running in at most 1 minute anyway
         with open(target_file) as target_file_handle:
             details = json.load(target_file_handle)
+
+        # TODO: Actually implement this in configure.py
+        details['new_broker_username'] = 'cloudifythesecond'
+        details['new_broker_password'] = 'cloudfiy23424'
+
+        # Add the new rabbit user
+        subprocess.call([RABBITMQCTL, 'add_user',
+                         details['new_broker_username'],
+                         details['new_broker_password']])
+        subprocess.call([RABBITMQCTL, 'set_permissions',
+                         details['new_broker_username'],
+                         '.*', '.*', '.*'])
+
         logger.debug('JSON: {contents}'.format(contents=str(details)))
         # We're done, we don't need the details file any more
         # Remove the file now in case we take more than a minute to run
@@ -65,6 +88,10 @@ if __name__ == '__main__':
         name = c.manager.get_context()['name']
         context = c.manager.get_context()['context']
         context['cloudify']['cloudify_agent']['broker_ssl_cert'] = public_cert
+        context['cloudify']['cloudify_agent']['broker_user'] = \
+            details['new_broker_username']
+        context['cloudify']['cloudify_agent']['broker_pass'] = \
+            details['new_broker_password']
         c.manager.update_context(name, context)
         logger.info('Updated broker cert in provider context with new cert.')
 
@@ -86,6 +113,39 @@ if __name__ == '__main__':
             ))
             shutil.copyfile(temp_cert, destination)
 
+        # Fix broker credentials in conf files
+        # For the management worker
+        with open(MGMTWORKER_CONFIG_PATH) as conf_handle:
+            mgmtworker_config = json.loads(conf_handle.read())
+        mgmtworker_config['broker_username'] = details['new_broker_username']
+        mgmtworker_config['broker_password'] = details['new_broker_password']
+        with open(MGMTWORKER_CONFIG_PATH, 'w') as conf_handle:
+            conf_handle.write(json.dumps(mgmtworker_config))
+        # And for the rest service
+        with open(RESTSERVICE_CONFIG_PATH) as conf_handle:
+            restservice_config = yaml.load(conf_handle.read())
+        restservice_config['amqp_username'] = details['new_broker_username']
+        restservice_config['amqp_password'] = details['new_broker_password']
+        with open(RESTSERVICE_CONFIG_PATH, 'w') as conf_handle:
+            # Disable default flow style to maintain configish layout
+            conf_handle.write(yaml.dump(restservice_config,
+                              default_flow_style=False))
+        # And the amqp-influx service
+        subprocess.check_call([
+            SED, '-i',
+            's/AMQP_USERNAME=.*/AMQP_USERNAME={new_username}/'.format(
+                new_username=details['new_broker_username'],
+            ),
+            AMQPINFLUX_CONFIG_PATH,
+        ])
+        subprocess.check_call([
+            SED, '-i',
+            's/AMQP_PASSWORD=.*/AMQP_PASSWORD={new_password}/'.format(
+                new_password=details['new_broker_password'],
+            ),
+            AMQPINFLUX_CONFIG_PATH,
+        ])
+
         # Start services
         for service in details['restart_services']:
             logger.info('Starting {service}'.format(service=service))
@@ -106,6 +166,10 @@ if __name__ == '__main__':
                     'Assuming already deleted.'.format(temp=temp_cert)
                 )
 
-        # And we can stop running, too
+        # And delete the old rabbit user
+        subprocess.call([RABBITMQCTL, 'delete_user',
+                         details['new_broker_username']])
+
+        # And we can stop running this cron job, too!
         logger.info('Stopping security configuration cron job')
         os.unlink('/etc/cron.d/cloudify_security_configuration')
