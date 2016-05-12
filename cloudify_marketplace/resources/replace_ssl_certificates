@@ -55,7 +55,7 @@ if __name__ == '__main__':
 
         # Update the cert in the provider context
         # Find the broker public cert
-        for temp_cert in details['new_certs'].keys():
+        for temp_cert, _ in details['new_certs']:
             if 'broker-public' in temp_cert:
                 broker_cert_path = temp_cert
                 break

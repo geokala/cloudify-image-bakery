@@ -269,12 +269,12 @@ def main():
         inputs['broker_names_and_ips']
     )
     services_to_restart.extend(services)
-    new_certs.extend(new_certs)
+    new_certs.extend(certs)
     services, certs = regenerate_manager_certificates(
         inputs['manager_names_and_ips']
     )
     services_to_restart.extend(services)
-    new_certs.extend(new_certs)
+    new_certs.extend(certs)
 
     with open('/tmp/cloudify_ssl_certificate_replacement.json', 'w') as fh:
         fh.write(json.dumps({
