@@ -41,6 +41,8 @@ if __name__ == '__main__':
         # TODO: Actually implement this in configure.py
         details['new_broker_username'] = 'cloudifythesecond'
         details['new_broker_password'] = 'cloudfiy23424'
+        details['new_manager_username'] = 'cloudifythethird'
+        details['new_manager_password'] = 'cloudi54321'
 
         # Add the new rabbit user
         subprocess.call([RABBITMQCTL, 'add_user',
@@ -145,6 +147,19 @@ if __name__ == '__main__':
             ),
             AMQPINFLUX_CONFIG_PATH,
         ])
+
+        # Update the manager credentials
+        username = details['new_manager_username']
+        password = details['new_manager_password']
+        MANAGER_REST_SECUIRTY_FILE = '/opt/manager/rest-security.conf'
+        with open(MANAGER_REST_SECUIRTY_FILE) as sec_file:
+            sec_data = json.loads(sec_file.read())
+        user = sec_data[
+            'userstore_driver']['properties']['userstore']['users'][0]
+        sec_data['admin_username'] = user['username'] = username
+        sec_data['admin_password'] = user['password'] = password
+        with open(MANAGER_REST_SECUIRTY_FILE, 'w') as sec_file:
+            sec_file.write(json.dumps(sec_data))
 
         # Start services
         for service in details['restart_services']:
