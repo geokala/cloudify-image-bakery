@@ -54,14 +54,19 @@ if __name__ == '__main__':
         logger.info('...configuration workflow finished.')
 
         # Update the cert in the provider context
-        broker_cert_path = '/etc/rabbit-pub.pem'
+        # Find the broker public cert
+        for temp_cert in details['new_certs'].keys():
+            if 'broker-public' in temp_cert:
+                broker_cert_path = temp_cert
+                break
         with open(broker_cert_path) as cert_handle:
             public_cert = cert_handle.read()
-        logger.info('Updated broker cert in provider context with new cert.')
+        # And update the context with it
         name = c.manager.get_context()['name']
         context = c.manager.get_context()['context']
         context['cloudify']['cloudify_agent']['broker_ssl_cert'] = public_cert
         c.manager.update_context(name, context)
+        logger.info('Updated broker cert in provider context with new cert.')
 
         # Don't restart the same service more than once
         services = set(details['restart_services'])
