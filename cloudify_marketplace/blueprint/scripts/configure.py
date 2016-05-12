@@ -244,7 +244,7 @@ def regenerate_broker_certificates(subjectaltnames):
 
     services_to_restart = [
         # Rabbit
-        'rabbitmq',
+        'cloudify-rabbitmq',
         # amqpinflux
         'cloudify-amqpinflux',
         # mgmtworker
