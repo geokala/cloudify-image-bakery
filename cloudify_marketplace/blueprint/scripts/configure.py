@@ -265,6 +265,8 @@ def main():
         '/root/.cloudify_image_security_enabled'
     )
 
+    ctx.instance.runtime_properties['security_enabled'] = security_enabled
+
     if security_enabled:
         services_to_restart = []
         new_certs = []
