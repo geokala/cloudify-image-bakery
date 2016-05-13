@@ -90,7 +90,10 @@ def allow_port_through_firewall(port, proto='tcp'):
 
 
 def update_context(agent_pk_path, agent_user):
-    if ctx.instance.runtime_properties['security_enabled']:
+    security_enabled = os.path.exists(
+        '/root/.cloudify_image_security_enabled'
+    )
+    if security_enabled:
         auth_header = get_auth_header('cloudify', 'cloudify')
         cert_path = '/root/cloudify/server.crt'
         c = CloudifyClient(
