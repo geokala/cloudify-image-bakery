@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import re
 import socket
 import subprocess
@@ -260,35 +261,42 @@ def main():
 
     authorize_user_ssh_key(inputs['user_ssh_key'])
 
-    services_to_restart = []
-    new_certs = []
-
-    # TODO: This should only happen with security enabled...
-    # ...and these should only be inputs in that case as well
-    services, certs = regenerate_broker_certificates(
-        inputs['broker_names_and_ips']
+    security_enabled = os.path.exists(
+        '/root/.cloudify_image_security_enabled'
     )
-    services_to_restart.extend(services)
-    new_certs.extend(certs)
-    services, certs = regenerate_manager_certificates(
-        inputs['manager_names_and_ips']
-    )
-    services_to_restart.extend(services)
-    new_certs.extend(certs)
 
-    with open('/tmp/cloudify_ssl_certificate_replacement.json', 'w') as fh:
-        fh.write(json.dumps({
-            'execution_id': ctx.execution_id,
-            # Get these from somewhere, somehow...
-            'cloudify_username': 'cloudify',
-            'cloudify_password': 'cloudify',
-            'new_certs': new_certs,
-            'restart_services': services_to_restart,
-        }))
-    # Allow some time in case this is the last part of the workflow so that
-    # the background cron job picks up and completes this at about the same
-    # time that the workflow appears to finish for the user (hopefully)
-    time.sleep(60)
+    if security_enabled:
+        services_to_restart = []
+        new_certs = []
+
+        services, certs = regenerate_broker_certificates(
+            inputs['broker_names_and_ips']
+        )
+        services_to_restart.extend(services)
+        new_certs.extend(certs)
+        services, certs = regenerate_manager_certificates(
+            inputs['manager_names_and_ips']
+        )
+        services_to_restart.extend(services)
+        new_certs.extend(certs)
+
+        with open('/tmp/cloudify_ssl_certificate_replacement.json',
+                  'w') as fh:
+            fh.write(json.dumps({
+                'execution_id': ctx.execution_id,
+                # Get these from somewhere, somehow...
+                'cloudify_username': 'cloudify',
+                'cloudify_password': 'cloudify',
+                'new_certs': new_certs,
+                'restart_services': services_to_restart,
+            }))
+        # Allow some time in case this is the last part of the workflow so
+        # that the background cron job picks up and completes this at about
+        # the same time that the workflow appears to finish for the user
+        # (hopefully)
+        # TODO: Put a log line here to the effect of "Certificate
+        # configuration in progress."
+        time.sleep(60)
 
 if __name__ == '__main__':
     main()

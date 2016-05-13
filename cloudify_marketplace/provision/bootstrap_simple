@@ -135,13 +135,18 @@ function bootstrap
   echo "bootstrapping..."
   # bootstrap the manager locally
   PATH=$CFY_VENV/bin:PATH $CFY_VENV/bin/cfy bootstrap -v --install-plugins \
-      --keep-up-on-failure \
-      -p cloudify-manager-blueprints/simple-manager-blueprint.yaml \
-      -i ~/cloudify//bootstrap_inputs.yaml
+    --keep-up-on-failure \
+    -p cloudify-manager-blueprints/simple-manager-blueprint.yaml \
+    -i ~/cloudify//bootstrap_inputs.yaml
   if [ "$?" -ne "0" ]; then
     echo "Bootstrap failed, stopping provision."
     exit 1
   fi
+
+  if [[ "${CLOUDIFY_MANAGER_SECURITY_ENABLED}" == "true" ]]; then
+    sudo touch /root/.cloudify_image_security_enabled
+  fi
+
   echo "bootstrap done."
   popd
 }
