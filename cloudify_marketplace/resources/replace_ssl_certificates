@@ -17,6 +17,7 @@ target_file = '/tmp/cloudify_ssl_certificate_replacement.json'
 MGMTWORKER_CONFIG_PATH = '/opt/mgmtworker/work/broker_config.json'
 RESTSERVICE_CONFIG_PATH = '/opt/manager/cloudify-rest.conf'
 AMQPINFLUX_CONFIG_PATH = '/etc/sysconfig/cloudify-amqpinflux'
+MANAGER_REST_SECUIRTY_FILE = '/opt/manager/rest-security.conf'
 
 # Executable paths
 RABBITMQCTL = '/sbin/rabbitmqctl'
@@ -149,15 +150,14 @@ if __name__ == '__main__':
         ])
 
         # Update the manager credentials
-        username = details['new_manager_username']
-        password = details['new_manager_password']
-        MANAGER_REST_SECUIRTY_FILE = '/opt/manager/rest-security.conf'
+        new_manager_username = details['new_manager_username']
+        new_manager_password = details['new_manager_password']
         with open(MANAGER_REST_SECUIRTY_FILE) as sec_file:
             sec_data = json.loads(sec_file.read())
         user = sec_data[
             'userstore_driver']['properties']['userstore']['users'][0]
-        sec_data['admin_username'] = user['username'] = username
-        sec_data['admin_password'] = user['password'] = password
+        sec_data['admin_username'] = user['username'] = new_manager_username
+        sec_data['admin_password'] = user['password'] = new_manager_password
         with open(MANAGER_REST_SECUIRTY_FILE, 'w') as sec_file:
             sec_file.write(json.dumps(sec_data))
 
