@@ -5,6 +5,10 @@ cd ${BLUEPRINT_PATH}
 # Inject the correct username
 sudo sed -i "s/<<IMAGEBUILDERUSER>>/$(whoami)/" scripts/configure.py
 
+# Use the correct credentials
+export CLOUDIFY_USERNAME=${CLOUDIFY_MANAGER_USERNAME}
+export CLOUDIFY_PASSWORD=${CLOUDIFY_MANAGER_PASSWORD}
+
 # Initialise the env and upload the blueprint
 ${CFY_BIN} init
 if [[ "${CLOUDIFY_MANAGER_SECURITY_ENABLED}" == "true" ]]; then
