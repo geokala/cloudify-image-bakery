@@ -35,7 +35,8 @@ function get_manager_blueprints
   echo "Retrieving Manager Blueprints"
   mkdir -p $CFY_ENV/cloudify-manager-blueprints
   dest=$(mktemp --suffix=.tar.gz)
-  curl --fail -L https://github.com/cloudify-cosmo/cloudify-manager-blueprints/archive/$CORE_TAG_NAME.tar.gz -o $dest
+  curl --fail -L https://github.com/geokala/cloudify-manager-blueprints/archive/noinflux2.tar.gz -o $dest
+  #curl --fail -L https://github.com/cloudify-cosmo/cloudify-manager-blueprints/archive/$CORE_TAG_NAME.tar.gz -o $dest
   tar -zxf $dest -C $CFY_ENV/cloudify-manager-blueprints --strip-components=1
 }
 
@@ -56,11 +57,13 @@ private_ip: 127.0.0.1
 ssh_user: ${USER}
 ssh_key_filename: /home/${USER}/.ssh/id_rsa
 
-security_enabled: ${CLOUDIFY_MANAGER_SECURITY_ENABLED}
 ssl_enabled: ${CLOUDIFY_MANAGER_SECURITY_ENABLED}
 insecure_endpoints_disabled: ${CLOUDIFY_MANAGER_SECURITY_ENABLED}
 admin_username: ${CLOUDIFY_MANAGER_USERNAME}
 admin_password: ${CLOUDIFY_MANAGER_PASSWORD}
+
+# TODO: Remove
+#ignore_bootstrap_validations: true
 
 rabbitmq_ssl_enabled: ${CLOUDIFY_MANAGER_SECURITY_ENABLED}
 rabbitmq_cert_private: |
@@ -89,10 +92,10 @@ function generate_certs
 function create_manager_certs
 {
   # Including 127.0.0.1 as DNS as well as IP due to requests throwing a wobbly
-  generate_certs manager cloudify-manager-blueprints/resources/ssl/server.key cloudify-manager-blueprints/resources/ssl/server.crt 127.0.0.1 IP:127.0.0.1,DNS:localhost,DNS:127.0.0.1
+  generate_certs manager cloudify-manager-blueprints/resources/ssl/internal_rest_host.key cloudify-manager-blueprints/resources/ssl/internal_rest_host.crt 127.0.0.1 IP:127.0.0.1,DNS:localhost,DNS:127.0.0.1
 
   # Append the cert to those trusted by requests
-  cat cloudify-manager-blueprints/resources/ssl/server.crt >> $($CFY_VENV/bin/python -c 'import requests; print(requests.certs.where())')
+  cat cloudify-manager-blueprints/resources/ssl/internal_rest_host.crt >> $($CFY_VENV/bin/python -c 'import requests; print(requests.certs.where())')
 }
 
 function create_broker_certs
@@ -126,8 +129,8 @@ function bootstrap
   # bootstrap the manager locally
   PATH=$CFY_VENV/bin:PATH $CFY_VENV/bin/cfy bootstrap -v --install-plugins \
     --keep-up-on-failure \
-    -p cloudify-manager-blueprints/simple-manager-blueprint.yaml \
-    -i ~/cloudify//bootstrap_inputs.yaml
+    -i ~/cloudify//bootstrap_inputs.yaml \
+    cloudify-manager-blueprints/simple-manager-blueprint.yaml
   if [ "$?" -ne "0" ]; then
     echo "Bootstrap failed, stopping provision."
     exit 1

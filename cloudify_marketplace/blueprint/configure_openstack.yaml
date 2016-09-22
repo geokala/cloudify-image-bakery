@@ -76,7 +76,7 @@ inputs:
     description: >
       Comma separated list of tcp ports to allow from the agents
       to the manager.
-    default: 5672,8101,53229
+    default: 443,5672,53229
 
   new_manager_username:
     type: string

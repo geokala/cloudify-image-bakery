@@ -1,6 +1,6 @@
 [Unit]
 Description=Update Cloudify settings under AWS environment
-Before=cloudify-mgmtworker.service cloudify-amqpinflux cloudify-riemann logstash cloudify-rest cloudify-webui
+Before=cloudify-mgmtworker.service cloudify-riemann logstash cloudify-rest cloudify-webui
 After=network.target
 
 [Service]

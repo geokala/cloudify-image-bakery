@@ -8,9 +8,9 @@ import time
 
 from cloudify import ctx
 from cloudify.state import ctx_parameters as inputs
+from cloudify_rest_client import CloudifyClient
 
-
-MANAGER_SSL_CERT_PATH = '/root/cloudify/server.crt'
+MANAGER_SSL_CERT_PATH = '/root/cloudify/ssl/external_rest_host.crt'
 
 
 COPY_INPUT_KEYS = [
@@ -19,6 +19,18 @@ COPY_INPUT_KEYS = [
     "new_broker_username",
     "new_broker_password",
     ]
+
+
+def get_auth_header(username, password):
+    header = None
+
+    if username and password:
+        credentials = '{0}:{1}'.format(username, password)
+        header = {
+            'Authorization':
+            'Basic' + ' ' + base64.urlsafe_b64encode(credentials)}
+
+    return header
 
 
 def regenerate_host_keys():
@@ -56,18 +68,6 @@ def authorize_user_ssh_key(ssh_key):
     with open('/home/<<IMAGEBUILDERUSER>>/.ssh/authorized_keys',
               'a') as auth_handle:
         auth_handle.write('{ssh_key}\n'.format(ssh_key=ssh_key))
-
-
-def get_auth_header(username, password):
-    header = None
-
-    if username and password:
-        credentials = '{0}:{1}'.format(username, password)
-        header = {
-            'Authorization':
-            'Basic' + ' ' + base64.urlsafe_b64encode(credentials)}
-
-    return header
 
 
 def build_certs(private_key_path,
@@ -126,17 +126,27 @@ def build_certs(private_key_path,
 
 
 def get_host_ips():
-    # Get addresses for each interface that is active (up),
-    # and only for dynamic or permanent IPv6 addresses
-    ip_details = subprocess.check_output([
-        'ip', 'address', 'show', 'up', 'dynamic', 'permanent',
+    ip_details = ''
+    # Get addresses for each interface that is active (up)
+    # First we get ipv4 dynamic (DHCP) and permanent (static) addresses
+    # then dynamic or permanent IPv6 addresses
+    # Trying to do this as a one liner causes dynamic IPv4 addresses to be
+    # ignored
+    ip_details += subprocess.check_output([
+        'ip', '-4', 'address', 'show', 'up', 'dynamic',
+    ])
+    ip_details += subprocess.check_output([
+        'ip', '-4', 'address', 'show', 'up', 'permanent',
+    ])
+    ip_details += subprocess.check_output([
+        'ip', '-6', 'address', 'show', 'up', 'dynamic', 'permanent',
     ])
 
     # IP addresses are expected to be in one of these forms:
     # inet <address>/<mask>
     # inet6 <address>/<mask>
     # We use a non-capturing group (?:) to ignore the inet/inet6 part
-    ip_finder = re.compile('(?:inet[6]? )([^/]+)')
+    ip_finder = re.compile('(?:inet[6]?[ \t])([^/]+)')
 
     return ip_finder.findall(ip_details)
 
@@ -212,8 +222,33 @@ def regenerate_broker_certificates(subjectaltnames):
     return new_certs
 
 
+def set_broker_ip():
+    security_enabled = os.path.exists(
+        '/root/.cloudify_image_security_enabled'
+    )
+    auth_header = get_auth_header('cloudify', 'cloudify')
+    if security_enabled:
+        cert_path = MANAGER_SSL_CERT_PATH
+        c = CloudifyClient(
+            headers=auth_header,
+            cert=cert_path,
+            trust_all=False,
+            port=443,
+            protocol='https',
+        )
+    else:
+        c = CloudifyClient(headers=auth_header)
+
+    host_ip = get_host_ips()[0]
+    name = c.manager.get_context()['name']
+    context = c.manager.get_context()['context']
+    context['cloudify']['cloudify_agent']['broker_ip'] = host_ip
+    c.manager.update_context(name, context)
+
+
 def main():
     regenerate_host_keys()
+    set_broker_ip()
 
     authorize_user_ssh_key(inputs['user_ssh_key'])
 

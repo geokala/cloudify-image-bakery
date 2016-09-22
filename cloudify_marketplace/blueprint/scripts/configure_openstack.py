@@ -237,9 +237,9 @@ def update_context(server,
     security_enabled = os.path.exists(
         '/root/.cloudify_image_security_enabled'
     )
+    auth_header = get_auth_header('cloudify', 'cloudify')
     if security_enabled:
-        auth_header = get_auth_header('cloudify', 'cloudify')
-        cert_path = '/root/cloudify/server.crt'
+        cert_path = '/root/cloudify/ssl/external_rest_host.crt'
         c = CloudifyClient(
             headers=auth_header,
             cert=cert_path,
@@ -248,7 +248,7 @@ def update_context(server,
             protocol='https',
         )
     else:
-        c = CloudifyClient()
+        c = CloudifyClient(headers=auth_header)
 
     name = c.manager.get_context()['name']
     context = c.manager.get_context()['context']
